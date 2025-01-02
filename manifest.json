@@ -1,0 +1,22 @@
+{
+  "name": "Seok-Bot",
+  "id": "1412806616512328648",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "dist/ui.html",
+  "capabilities": [],
+  "enableProposedApi": false,
+  "documentAccess": "dynamic-page",
+  "editorType": [
+    "figma",
+    "figjam"
+  ],
+  "networkAccess": {
+    "allowedDomains": [
+      "http://api.openai.com",
+      "https://api.airtable.com"
+    ],
+    "reasoning": "This application needs to interact with a custom GPT model hosted at a specific external domain in order to generate responses based on user inputs. Network access is required to ensure proper functionality and communication with the hosted AI service.",
+    "devAllowedDomains": ["http://localhost:3000"]
+  }
+}

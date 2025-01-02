@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "types": ["@figma/plugin-typings"]  // 여기에 필요한 typings만 포함시킴
+  },
+  "include": ["src/**/*"],                 // 포함할 파일
+  "exclude": ["node_modules"]              // 제외할 파일
+}
