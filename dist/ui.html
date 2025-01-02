@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            display: flex;
+            flex-direction: column; /* 세로로 나열 */
+            gap: 10px; /* 요소 간의 간격 */
+        }
+        input, select, button, textarea {
+            padding: 10px;
+            width: 100%; /* 전체 너비 사용 */
+            box-sizing: border-box; /* 패딩을 포함한 너비 계산 */
+        }
+        #userInput {
+            height: 100px; /* 질문 입력 필드 높이 설정 */
+            resize: none; /* 크기 조절 비활성화 */
+            overflow: auto; /* 내용이 넘칠 경우 스크롤 가능 */
+        }
+    </style>
+</head>
+  <body>
+    <input id="tokenInput" type="text" placeholder="OpenAI API Token을 입력하세요" />
+    <button id="saveToken">토큰 저장</button>
+
+    <textarea id="userInput" placeholder="confrim 또는 alert 모달에 맞는 적절한 문구를 추천합니다."></textarea>
+    
+    <!-- 드롭다운 추가 -->
+    <select id="componentSelect">
+      <option value="Modal / Confirm">Modal / Confirm</option>
+      <option value="Modal / Alert">Modal / Alert</option>
+    </select>
+
+    <button id="submit">질문 전송</button>
+    <p id="result"></p>
+
+    <script>
+      // 토큰 저장 버튼 클릭 시
+      document.getElementById('saveToken').onclick = () => {
+        const token = document.getElementById('tokenInput').value; // 입력한 토큰 값 가져오기
+        // Figma 플러그인으로 메시지 전송
+        parent.postMessage({ pluginMessage: { type: 'set-token', token } }, '*');
+      };
+
+      // 질문 전송 버튼 클릭 시
+      document.getElementById('submit').onclick = () => {
+        const question = document.getElementById('userInput').value; // 질문 입력 값 가져오기
+        const selectedComponent = document.getElementById('componentSelect').value; // 선택된 컴포넌트 가져오기
+
+      // 선택된 컴포넌트에 따라 적절한 메시지 생성
+      let message;
+      if (selectedComponent === 'Modal / Confirm') {
+        message = '확인 및 취소 버튼이 있는 모달을 생성합니다.';
+      } else if (selectedComponent === 'Modal / Alert') {
+        message = '확인 버튼이 있는 경고 모달을 생성합니다.';
+      }
+        
+      // Figma 플러그인으로 메시지 전송
+        parent.postMessage({ pluginMessage: { type: 'submit-question', question, component: selectedComponent } }, '*');
+      };
+    </script>
+  </body>
+</html>
