@@ -51,101 +51,104 @@ const INPUT_COMPONENTS = [
     'Modal / Confirm',
     'Modal / Alert'
 ];
-let openAIToken = null; // openAIToken 변수를 let으로 선언
+const openAITokenObj = { token: null }; // openAIToken을 객체로 선언
+// UI 초기화
+function loadUIState() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const savedToken = yield figma.clientStorage.getAsync('openAIToken'); // 저장된 토큰 가져오기
+        figma.ui.postMessage({ type: 'load-token', token: savedToken || '' }); // HTML로 전달
+    });
+}
+function checkStoredToken() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const storedToken = yield figma.clientStorage.getAsync('openAIToken');
+        console.log('Stored token:', storedToken);
+    });
+}
+checkStoredToken();
 figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
-    if (msg.type === 'set-token') {
-        openAIToken = msg.token; // 토큰을 저장
-        // 토큰을 clientStorage에 저장
-        yield figma.clientStorage.setAsync('openAIToken', openAIToken);
-        figma.notify('토큰이 저장되었습니다.');
+    if (msg.type === 'save-token') {
+        const token = msg.token;
+        try {
+            // Figma clientStorage에 저장
+            yield figma.clientStorage.setAsync('openAIToken', token);
+            figma.ui.postMessage({ type: 'token-saved', success: true });
+        }
+        catch (error) {
+            console.error('저장 중 오류 발생:', error);
+            figma.ui.postMessage({
+                type: 'token-saved',
+                success: false,
+                error: error.message, // 명시적으로 Error로 타입 캐스팅
+            });
+        }
     }
     if (msg.type === 'submit-question') {
         const question = msg.question;
-        const selectedComponent = msg.component; // 선택된 컴포넌트 값 받기
+        const selectedComponent = msg.component;
+        if (!openAITokenObj.token) {
+            figma.notify('유효한 OpenAI API 토큰이 필요합니다.');
+            return;
+        }
         const airtableAnswer = yield fetchAirtableData();
         if (!airtableAnswer) {
-            figma.notify('Airtable에서 데이터를 찾을 수 없습니다.');
+            figma.notify('Airtable 데이터가 없습니다.');
             return;
         }
-        let prompt;
-        if (selectedComponent === 'Modal / Confirm') {
-            prompt = `
-        ${JSON.stringify(airtableAnswer)} 여기 데이터에서 component 컬럼 중 Modal이고 button 컬럼에 '/' 특수문자가 있는 데이터는 Modal/Confirm에서 버튼 레이블로 사용되고 있습니다.
-        위 데이터를 참고하여 "${question}" 에 맞는 문구를 만들어주세요.
-        컴포넌트는 ${selectedComponent}입니다.
-        응답 형식은 다음과 같아야 합니다:
-        title: [제목]
-        description: [설명]
-        ok: [확인 버튼]
-        cancel: [취소 버튼]
-      `;
-        }
-        else if (selectedComponent === 'Modal / Alert') {
-            prompt = `
-        ${JSON.stringify(airtableAnswer)} 여기 데이터에서 component 컬럼 중 Modal이고 button 컬럼에 '/' 특수문자가 없는 데이터는 Modal/Alert에서 버튼 레이블로 사용되고 있습니다.
-        위 데이터를 참고하여 "${question}" 에 맞는 문구를 만들어주세요.
-        컴포넌트는 ${selectedComponent}입니다.
-        응답 형식은 다음과 같아야 합니다:
-        title: [제목]
-        description: [설명]
-        ok: [확인 버튼]
-      `;
+        // GPT 요청 생성 (별도 함수로 분리)
+        const prompt = createPrompt(question, selectedComponent, airtableAnswer);
+        const gptResponse = yield fetchChatGPTResponse(prompt, openAITokenObj.token);
+        if (gptResponse) {
+            handleGPTResponse(gptResponse); // 응답 처리
         }
         else {
-            figma.notify('유효하지 않은 컴포넌트입니다.');
-            return;
+            figma.notify('GPT 응답을 처리할 수 없습니다.');
         }
-        // openAIToken이 null이 아닐 때만 API 호출
-        if (openAIToken) {
-            const gptResponse = yield fetchChatGPTResponse(prompt, openAIToken);
-            if (!gptResponse) {
-                figma.notify('GPT 응답이 없습니다.');
-                return;
-            }
-            console.log('GPT Response:', gptResponse); // gptResponse의 내용을 로그로 출력
-            let parsedResponse;
-            try {
-                parsedResponse = JSON.parse(gptResponse); // JSON 파싱 시도
-            }
-            catch (error) {
-                figma.notify('GPT 응답을 파싱하는 중 오류가 발생했습니다.'); // 오류 발생 시 알림
-                console.error('JSON Parse Error:', error);
-                return; // 오류 발생 시 함수 종료
-            }
-            const { title, description, ok, cancel } = parsedResponse; // 파싱된 응답 사용
+    }
+    // GPT 요청 생성 함수
+    function createPrompt(question, component, data) {
+        const modalType = component === 'Modal / Confirm' ? 'Confirm' : 'Alert';
+        return `
+      ${JSON.stringify(data)}
+      위 데이터를 참고하여 "${question}"에 적합한 문구를 만들어주세요.
+      컴포넌트는 ${modalType}입니다.
+      응답 형식:
+      {
+        "title": "제목",
+        "description": "설명",
+        "ok": "확인 버튼 텍스트",
+        ${modalType === 'Confirm' ? `"cancel": "취소 버튼 텍스트"` : ''}
+      }
+    `;
+    }
+    // GPT 응답 처리 함수
+    function handleGPTResponse(response) {
+        try {
+            const parsedResponse = JSON.parse(response); // JSON 파싱
+            const { title, description, ok, cancel } = parsedResponse;
             const selectedFrames = figma.currentPage.selection.filter(node => node.type === 'FRAME' || node.type === 'INSTANCE');
             if (selectedFrames.length === 0) {
                 figma.notify('컴포넌트를 선택하세요.');
                 return;
             }
             const selectedFrame = selectedFrames[0];
-            // 컴포넌트 타입에 따라 필요한 레이어 설정
-            yield setTextInFrame(selectedFrame, 'title', title);
-            yield setTextInFrame(selectedFrame, 'description', description);
-            yield setTextInFrame(selectedFrame, 'ok', ok);
-            yield setTextInFrame(selectedFrame, 'cancel', cancel);
+            // 프레임 내부 텍스트 설정
+            setTextInFrame(selectedFrame, 'title', title);
+            setTextInFrame(selectedFrame, 'description', description);
+            setTextInFrame(selectedFrame, 'ok', ok);
+            setTextInFrame(selectedFrame, 'cancel', cancel);
             figma.notify(`${selectedFrame.name} 컴포넌트가 업데이트되었습니다.`);
         }
-        else {
-            figma.notify('유효한 OpenAI API 토큰이 필요합니다.');
+        catch (error) {
+            figma.notify('GPT 응답을 파싱하는 중 오류가 발생했습니다.');
+            console.error('JSON Parse Error:', error);
         }
     }
 });
-// 플러그인 시작 시 저장된 토큰을 불러오기
-function loadToken() {
-    return __awaiter(this, void 0, void 0, function* () {
-        const storedToken = yield figma.clientStorage.getAsync('openAIToken');
-        if (storedToken) {
-            openAIToken = storedToken; // 불러온 토큰을 변수에 저장
-            // UI에 저장된 토큰을 표시하거나 사용할 수 있습니다.
-            figma.ui.postMessage({ type: 'load-token', token: storedToken });
-        }
-    });
-}
 // Figma 플러그인의 UI를 보여줍니다.
 figma.showUI(__html__, { width: 300, height: 500 });
 // 플러그인 시작 시 저장된 토큰 불러오기
-loadToken();
+loadUIState(); // UI 초기화 실행
 // 특정 프레임 안의 텍스트 레이어에 텍스트를 설정하는 함수
 function setTextInFrame(frame, targetNode, text) {
     return __awaiter(this, void 0, void 0, function* () {

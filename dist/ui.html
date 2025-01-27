@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -19,11 +19,16 @@
             resize: none; /* 크기 조절 비활성화 */
             overflow: auto; /* 내용이 넘칠 경우 스크롤 가능 */
         }
+        .hidden {
+            display: none; /* 숨김 클래스 */
+        }
     </style>
 </head>
-  <body>
-    <input id="tokenInput" type="text" placeholder="OpenAI API Token을 입력하세요" />
-    <button id="saveToken">토큰 저장</button>
+<body>
+    <input id="tokenInput" type="text" placeholder="OpenAI API Token을 입력하세요" disabled />
+    <button id="editToken">수정</button>
+    <button id="saveToken" class="hidden" disabled>저장</button>
+    <button id="closeToken" class="hidden">닫기</button>
 
     <textarea id="userInput" placeholder="confrim 또는 alert 모달에 맞는 적절한 문구를 추천합니다."></textarea>
     
@@ -37,29 +42,135 @@
     <p id="result"></p>
 
     <script>
-      // 토큰 저장 버튼 클릭 시
-      document.getElementById('saveToken').onclick = () => {
-        const token = document.getElementById('tokenInput').value; // 입력한 토큰 값 가져오기
-        // Figma 플러그인으로 메시지 전송
-        parent.postMessage({ pluginMessage: { type: 'set-token', token } }, '*');
-      };
+      let previousToken = ''; // 이전 토큰 값을 저장할 변수
+      let currentToken = ''; // 현재 토큰 값을 저장할 변수
 
-      // 질문 전송 버튼 클릭 시
-      document.getElementById('submit').onclick = () => {
-        const question = document.getElementById('userInput').value; // 질문 입력 값 가져오기
-        const selectedComponent = document.getElementById('componentSelect').value; // 선택된 컴포넌트 가져오기
+        // 페이지 로드 시 클라이언트 스토리지에서 토큰 불러오기
+        document.addEventListener('DOMContentLoaded', async () => {
+        const tokenInput = document.getElementById('tokenInput');
+        const savedToken = await figma.clientStorage.getAsync('openAIToken'); // 클라이언트 스토리지에서 가져오기
+        if (savedToken) {
+            tokenInput.value = savedToken; // 저장된 토큰을 tokenInput에 설정
+            previousToken = savedToken; // 이전 토큰 값 저장
+            currentToken = savedToken; // 현재 토큰 값 저장
+        } else {
+            console.log('저장된 토큰이 없습니다.'); // 디버깅용 로그
+        }
 
-      // 선택된 컴포넌트에 따라 적절한 메시지 생성
-      let message;
-      if (selectedComponent === 'Modal / Confirm') {
-        message = '확인 및 취소 버튼이 있는 모달을 생성합니다.';
-      } else if (selectedComponent === 'Modal / Alert') {
-        message = '확인 버튼이 있는 경고 모달을 생성합니다.';
-      }
+        // 수정 버튼 클릭 시
+        document.getElementById('editToken').onclick = () => {
+            tokenInput.disabled = false; // 입력 필드 활성화
+            tokenInput.focus(); // 입력 필드에 포커스
+        };
+
+        // 저장 버튼 클릭 시
+        document.getElementById('saveToken').onclick = async () => {
+            const token = tokenInput.value.trim(); // 입력한 토큰 값 가져오기
+            if (!token) {
+                alert('유효한 토큰을 입력하세요.'); // 빈 값 체크
+                return;
+            }
+
+            // 백엔드 코드로 메시지 전달
+            parent.postMessage({ pluginMessage: { type: 'set-token', token } }, '*');
+        };
+        });
+
+        document.getElementById('editToken').onclick = () => {
+        const tokenInput = document.getElementById('tokenInput');
+        const saveButton = document.getElementById('saveToken');
+        const closeButton = document.getElementById('closeToken');
+
+        // 입력 필드 활성화
+        tokenInput.disabled = false;
+        tokenInput.focus();
+
+        // 저장 버튼과 닫기 버튼 보이기
+        saveButton.classList.remove('hidden');
+        closeButton.classList.remove('hidden');
+
+        // 수정 버튼 숨기기
+        document.getElementById('editToken').classList.add('hidden');
+
+        // 입력값 변경 이벤트 감지
+        tokenInput.addEventListener('input', () => {
+            const newValue = tokenInput.value.trim(); // 입력값 (공백 제거)
+
+            // 입력값이 이전 값과 다르면 저장 버튼 활성화
+            if (newValue !== previousToken) {
+            saveButton.disabled = false; // 저장 버튼 활성화
+            } else {
+            saveButton.disabled = true; // 저장 버튼 비활성화
+            }
+        });
+        };
+
+        // 저장 버튼 클릭 시
+        document.getElementById('saveToken').onclick = async () => {
+            const tokenInput = document.getElementById('tokenInput');
+            const token = tokenInput.value.trim(); // 입력값 가져오기
+            
+            if (!token) {
+            alert('토큰을 입력해주세요.');
+            return;
+            }
+
+            // TypeScript 코드로 메시지 전달
+            parent.postMessage(
+                { pluginMessage: { type: 'save-token', token } },
+                '*'
+            );
+        };
+
+        // 닫기 버튼 클릭 시
+        document.getElementById('closeToken').onclick = () => {
+        const tokenInput = document.getElementById('tokenInput');
+
+        // 입력 필드를 이전 값으로 복원
+        tokenInput.value = currentToken;
+        tokenInput.disabled = true; // 입력 필드 비활성화
+
+        // 저장 버튼과 닫기 버튼 숨기기
+        document.getElementById('saveToken').classList.add('hidden');
+        document.getElementById('closeToken').classList.add('hidden');
+
+        // 수정 버튼 보이기
+        document.getElementById('editToken').classList.remove('hidden');
+        };
+
+        // Figma에서 전달된 데이터를 처리
+        window.onmessage = (event) => {
+        const pluginMessage = event.data.pluginMessage || {}; // pluginMessage를 별도로 추출
+        const { type: messageType, token } = pluginMessage; // 첫 번째 선언: type을 messageType으로 변경
         
-      // Figma 플러그인으로 메시지 전송
+        if (messageType === 'load-token') {
+            const tokenInput = document.getElementById('tokenInput');
+            tokenInput.value = token || ''; // 저장된 토큰을 입력 필드에 설정
+            currentToken = token || ''; // 현재 토큰 값 업데이트
+            previousToken = token || ''; // 이전 토큰 값도 업데이트
+        }
+
+        const { type: actionType, success, error } = pluginMessage; // 두 번째 선언: type을 actionType으로 변경
+
+        if (actionType === 'token-saved') {
+            if (success) {
+            alert('토큰이 성공적으로 저장되었습니다.');
+            document.getElementById('tokenInput').disabled = true;
+            document.getElementById('saveToken').classList.add('hidden');
+            document.getElementById('editToken').classList.remove('hidden');
+            } else {
+            alert(`토큰 저장 중 오류가 발생했습니다: ${error}`);
+            }
+        }
+        };
+
+        // 질문 전송
+        document.getElementById('submit').onclick = () => {
+        const question = document.getElementById('userInput').value;
+        const selectedComponent = document.getElementById('componentSelect').value;
+
         parent.postMessage({ pluginMessage: { type: 'submit-question', question, component: selectedComponent } }, '*');
-      };
+        };
     </script>
-  </body>
+</body>
 </html>
