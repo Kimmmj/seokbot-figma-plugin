@@ -66,9 +66,18 @@ function checkStoredToken() {
     });
 }
 checkStoredToken();
+let editStartToken = ''; // 수정 시작 시의 값을 저장하는 변수
 figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
-    if (msg.type === 'save-token') {
-        const token = msg.token;
+    const { type, token } = msg;
+    if (type === 'start-edit') {
+        // 수정 시작 시 현재 값을 저장
+        editStartToken = token; // HTML에서 전달된 값을 저장
+    }
+    if (type === 'cancel-edit') {
+        // 수정 취소 시 HTML로 복원 값 전달
+        figma.ui.postMessage({ type: 'restore-token', token: editStartToken });
+    }
+    if (type === 'save-token') {
         try {
             // Figma clientStorage에 저장
             yield figma.clientStorage.setAsync('openAIToken', token);
