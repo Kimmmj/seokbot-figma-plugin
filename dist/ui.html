@@ -24,19 +24,19 @@
             border-radius: 2px;
         }
 
-        .save-button:disabled {
+        .save-button:disabled,
+        .send-button:disabled {
             color: gray; /* 텍스트 색상 변경 */
             background-color: lightgray; /* 배경색 변경 */
             border: 1px solid darkgray; /* 테두리 색상 변경 */
             cursor: not-allowed; /* 커서 변경 */
         }
 
-        .edit-button:hover,
-        .send-button:hover {
+        .edit-button:hover {
             background-color: black; /* 원하는 hover 배경색으로 변경 */
         }
 
-        #userInput {
+        #questionInput {
             height: 100px; /* 질문 입력 필드 높이 설정 */
             resize: none; /* 크기 조절 비활성화 */
             overflow: auto; /* 내용이 넘칠 경우 스크롤 가능 */
@@ -65,8 +65,8 @@
     <button id="editToken" class="edit-button">수정</button>
     <button id="saveToken" class="save-button hidden" disabled>저장</button>
     <button id="closeToken" class="hidden">닫기</button>
-    <label for="userInput" class="label">질문 입력</label>
-    <textarea id="userInput" placeholder="confirm 또는 alert 모달에 맞는 적절한 문구를 추천합니다."></textarea>
+    <label for="questionInput" class="label">질문 입력</label>
+    <textarea id="questionInput" placeholder="confirm 또는 alert 모달에 맞는 적절한 문구를 추천합니다."></textarea>
     
     <!-- 드롭다운 추가 -->
     <select id="componentSelect">
@@ -74,7 +74,7 @@
       <option value="Modal / Alert">Modal / Alert</option>
     </select>
 
-    <button id="submit" class="send-button">질문 전송</button>
+    <button id="submitButton" class="send-button" disabled>질문 하기</button>
     <p id="result"></p>
 
     <script>
@@ -247,12 +247,25 @@
         };
 
         // 질문 전송
-        document.getElementById('submit').onclick = () => {
-        const question = document.getElementById('userInput').value;
-        const selectedComponent = document.getElementById('componentSelect').value;
+        document.getElementById('submitButton').onclick = () => {
+            const question = document.getElementById('questionInput').value;
+            const selectedComponent = document.getElementById('componentSelect').value;
 
-        parent.postMessage({ pluginMessage: { type: 'submit-question', question, component: selectedComponent } }, '*');
+            parent.postMessage({ pluginMessage: { type: 'submit-question', question, component: selectedComponent } }, '*');
         };
+
+        // 질문 전송 버튼 활성화 상태 검사
+        function checkInputs() {
+            const questionInputValue = document.getElementById('questionInput').value.trim();
+            const tokenValue = document.getElementById('tokenInput').value.trim(); // 토큰 입력 필드 값 가져오기
+
+            // 질문 입력 필드에 값이 있고, 토큰 입력 필드에 값이 있을 경우 버튼 활성화
+            document.getElementById('submitButton').disabled = !(questionInputValue.length > 0 && tokenValue.length > 0);
+        }
+
+        // textarea에서 입력할 때마다 질문 전송 버튼 상태 검사
+        document.getElementById('questionInput').addEventListener('input', checkInputs);
+        document.getElementById('tokenInput').addEventListener('input', checkInputs); // 토큰 입력 필드에서도 상태 검사
     </script>
 </body>
 </html>
