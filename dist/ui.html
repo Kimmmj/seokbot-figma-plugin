@@ -129,7 +129,7 @@
             parent.postMessage({ pluginMessage: { type: 'start-edit', token: currentTokenValue } }, '*');
 
             // 수정 시작 값 저장
-            editStartToken = tokenInput.value.trim(); // 수정 시작 값 저장
+            editStartToken = tokenInput.value.trim(); // 현재 입력값을 수정 시작 값으로 설정
 
             // 입력 필드 활성화
             tokenInput.disabled = false;
@@ -148,6 +148,7 @@
 
         // 입력값 변경 시 저장 버튼 상태 업데이트
         function handleInputChange() {
+            const tokenInput = document.getElementById('tokenInput');
             const saveButton = document.getElementById('saveToken'); // 저장 버튼
             const newValue = tokenInput.value.trim(); // 현재 입력값
 
@@ -162,13 +163,20 @@
         document.getElementById('saveToken').onclick = async () => {
             const tokenInput = document.getElementById('tokenInput');
             const token = tokenInput.value.trim(); // 입력값 가져오기
+            const tokenValue = tokenInput.value.trim();
             const saveButton = document.getElementById('saveToken');
             const closeButton = document.getElementById('closeToken');
             const editButton = document.getElementById('editToken');
             
             if (!token) {
-            alert('토큰을 입력해주세요.');
-            return;
+                alert('토큰을 입력해주세요.');
+                return;
+            }
+
+            // 유효성 검사: 20글자 미만일 경우 경고 메시지 표시
+            if (tokenValue.length < 20) {
+                alert('토큰은 최소 20글자 이상이어야 합니다.'); // 경고 메시지
+                return; // 함수 종료
             }
 
             // TypeScript 코드로 메시지 전달
@@ -176,24 +184,30 @@
                 { pluginMessage: { type: 'save-token', token } },
                 '*'
             );
+            try {
+                await figma.clientStorage.setAsync('openAIToken', tokenValue); // 클라이언트 스토리지에 토큰 저장
+                alert('토큰이 저장되었습니다!'); // 저장 완료 메시지
 
-            // 저장 후 상태 초기화
-            previousToken = token; // 저장된 값을 유지
-            editStartToken = token; // 수정 시작 값도 업데이트
-            saveButton.disabled = true; // 저장 버튼 비활성화
-            tokenInput.disabled = true; // 입력 필드 비활성화
-            saveButton.classList.add('hidden'); // 저장 버튼 숨기기
-            closeButton.classList.add('hidden'); // 닫기 버튼 숨기기
-            editButton.classList.remove('hidden'); // 수정 버튼 보이기
+                // 저장 후 상태 초기화
+                previousToken = tokenValue; // 저장된 값을 유지
+                editStartToken = tokenValue; // 수정 시작 값도 업데이트
+                saveButton.disabled = true; // 저장 버튼 비활성화
+                tokenInput.disabled = true; // 입력 필드 비활성화
+                saveButton.classList.add('hidden'); // 저장 버튼 숨기기
+                closeButton.classList.add('hidden'); // 닫기 버튼 숨기기
+                editButton.classList.remove('hidden'); // 수정 버튼 보이기
+            } catch (error) {
+                console.error('토큰을 저장하는 중 오류 발생:', error.message || error); // 오류 메시지 출력
+            }
         };
 
         // 닫기 버튼 클릭 시
-        document.getElementById('closeToken').onclick = () => {
+        document.getElementById('closeToken').onclick = async () => {
             const tokenInput = document.getElementById('tokenInput');
             const saveButton = document.getElementById('saveToken');
 
             // 원래 값으로 복원
-            tokenInput.value = previousToken; // 원래 값으로 복원
+            tokenInput.value = editStartToken; // 원래 값으로 복원
             tokenInput.disabled = true; // 입력 비활성화
 
             // 저장 버튼과 닫기 버튼 숨기기
