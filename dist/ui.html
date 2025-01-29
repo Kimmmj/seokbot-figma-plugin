@@ -44,15 +44,29 @@
         .hidden {
             display: none; /* 숨김 클래스 */
         }
+        select {
+            appearance: none; /* 기본 화살표 제거 */
+            padding: 10px; /* 내부 여백 */
+            border: 1px solid #ccc; /* 테두리 스타일 */
+            border-radius: 4px; /* 모서리 둥글게 */
+            height: 40px; /* 높이 조정 */
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><polygon points="0,0 10,0 5,5" fill="black"/></svg>') no-repeat right 10px center; /* 화살표 아이콘 추가 */
+            background-size: 10px; /* 화살표 크기 조정 */
+        }
+        .label {
+            font-size: 14px; /* 폰트 크기 조절 */
+            display: block; /* 라벨을 블록 요소로 설정하여 줄 바꿈 */
+        }
     </style>
 </head>
 <body>
+    <label for="tokenInput" class="label">Open AI Token</label>
     <input id="tokenInput" type="text" placeholder="OpenAI API Token을 입력하세요" disabled />
     <button id="editToken" class="edit-button">수정</button>
     <button id="saveToken" class="save-button hidden" disabled>저장</button>
     <button id="closeToken" class="hidden">닫기</button>
-
-    <textarea id="userInput" placeholder="confrim 또는 alert 모달에 맞는 적절한 문구를 추천합니다."></textarea>
+    <label for="userInput" class="label">질문 입력</label>
+    <textarea id="userInput" placeholder="confirm 또는 alert 모달에 맞는 적절한 문구를 추천합니다."></textarea>
     
     <!-- 드롭다운 추가 -->
     <select id="componentSelect">
@@ -116,7 +130,6 @@
 
             // 수정 시작 값 저장
             editStartToken = tokenInput.value.trim(); // 수정 시작 값 저장
-            console.log('수정 시작 값:', editStartToken); // 디버깅용 로그
 
             // 입력 필드 활성화
             tokenInput.disabled = false;
@@ -137,7 +150,6 @@
         function handleInputChange() {
             const saveButton = document.getElementById('saveToken'); // 저장 버튼
             const newValue = tokenInput.value.trim(); // 현재 입력값
-            console.log('[입력 변경] 현재 입력값:', newValue, ' / 원래 값:', editStartToken);
 
             if (newValue !== editStartToken) {
                 saveButton.disabled = false; // 값이 변경되었으면 버튼 활성화
@@ -150,6 +162,9 @@
         document.getElementById('saveToken').onclick = async () => {
             const tokenInput = document.getElementById('tokenInput');
             const token = tokenInput.value.trim(); // 입력값 가져오기
+            const saveButton = document.getElementById('saveToken');
+            const closeButton = document.getElementById('closeToken');
+            const editButton = document.getElementById('editToken');
             
             if (!token) {
             alert('토큰을 입력해주세요.');
@@ -163,7 +178,6 @@
             );
 
             // 저장 후 상태 초기화
-            console.log('[저장 완료] 저장된 값:', token);
             previousToken = token; // 저장된 값을 유지
             editStartToken = token; // 수정 시작 값도 업데이트
             saveButton.disabled = true; // 저장 버튼 비활성화
@@ -176,6 +190,7 @@
         // 닫기 버튼 클릭 시
         document.getElementById('closeToken').onclick = () => {
             const tokenInput = document.getElementById('tokenInput');
+            const saveButton = document.getElementById('saveToken');
 
             // 원래 값으로 복원
             tokenInput.value = previousToken; // 원래 값으로 복원

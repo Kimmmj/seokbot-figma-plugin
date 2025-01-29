@@ -153,7 +153,7 @@ figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 // Figma 플러그인의 UI를 보여줍니다.
-figma.showUI(__html__, { width: 300, height: 500 });
+figma.showUI(__html__, { width: 300, height: 600 });
 // 플러그인 시작 시 저장된 토큰 불러오기
 loadUIState(); // UI 초기화 실행
 // 특정 프레임 안의 텍스트 레이어에 텍스트를 설정하는 함수

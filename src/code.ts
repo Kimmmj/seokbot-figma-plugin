@@ -159,7 +159,7 @@ figma.ui.onmessage = async (msg) => {
 };
 
 // Figma 플러그인의 UI를 보여줍니다.
-figma.showUI(__html__, { width: 300, height: 500 });
+figma.showUI(__html__, { width: 300, height: 600 });
 
 // 플러그인 시작 시 저장된 토큰 불러오기
 loadUIState(); // UI 초기화 실행
