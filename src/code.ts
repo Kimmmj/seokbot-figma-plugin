@@ -1,14 +1,10 @@
 function 필요한것만(arr: Array<any>) {
   return arr.map(item => {
-    console.log('item.fields.Button', item.fields.Button)
     const [cancel, ok] = item.fields.Button ? item.fields.Button?.split(' / ') : ['', '']
     return ({
     title: item.fields.Title,
     desc: item.fields.Description,
-    button: {
-      cancel,
-      ok
-    },
+    button: { cancel, ok },
     comp: item.fields.Component,
   })
 })
@@ -48,6 +44,8 @@ const openAITokenObj = { token: null as string | null }; // openAIToken을 객�
 async function loadUIState() {
   const savedToken = await figma.clientStorage.getAsync('openAIToken'); // 저장된 토큰 가져오기
   figma.ui.postMessage({ type: 'load-token', token: savedToken || '' }); // HTML로 전달
+  editStartToken = savedToken || ''; // 초기화 시 동기화
+  currentToken = savedToken || ''; // 초기화 시 동기화
 }
 
 async function checkStoredToken() {
@@ -56,19 +54,19 @@ async function checkStoredToken() {
 }
 checkStoredToken();
 
-let editStartToken = ''; // 수정 시작 시의 값을 저장하는 변수
+// 전역 변수 선언
+let currentToken: string = ''; // 현재 토큰 값을 저장하는 변수
+let editStartToken: string = ''; // 수정 시작 시의 값을 저장하는 변수
 
 figma.ui.onmessage = async (msg) => {
   const { type, token } = msg;
 
   if (type === 'start-edit') {
-      // 수정 시작 시 현재 값을 저장
-      editStartToken = token; // HTML에서 전달된 값을 저장
+      editStartToken = token; // 수정 시작 시 현재 값을 저장
   }
 
   if (type === 'cancel-edit') {
-      // 수정 취소 시 HTML로 복원 값 전달
-      figma.ui.postMessage({ type: 'restore-token', token: editStartToken });
+      figma.ui.postMessage({ type: 'restore-token', token: editStartToken }); // 수정 취소 시 HTML로 복원 값 전달
   }
 
   if (type === 'save-token') {
@@ -170,37 +168,39 @@ loadUIState(); // UI 초기화 실행
 async function setTextInFrame(frame: FrameNode | InstanceNode, targetNode: string, text: string) {
   const layer = frame.findOne(node => node.type === 'TEXT' && node.name === targetNode) as TextNode;
 
-
-  if (targetNode) {
-    const a = await figma.loadFontAsync(layer.fontName as FontName);
-    console.log({a})
-    layer.characters = text;
-  } else {
-    figma.notify('title 레이어를 찾을 수 없습니다.');
+  if (!layer) {
+    figma.notify(`${targetNode} 레이어를 찾을 수 없습니다.`);
+    return; // 레이어가 없으면 중단
   }
+
+  await figma.loadFontAsync(layer.fontName as FontName);
+  layer.characters = text;
 }
 
 async function fetchChatGPTResponse(prompt: string, token: string) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}` // 입력받은 토큰 사용
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 50
-    })
-  });
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 50,
+      }),
+    });
 
-  if (!response.ok) {
-    console.error('Error with API:', response.status, response.statusText);
-    return; // 문제가 있으면 null 반환
+    if (!response.ok) {
+      throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || '응답 없음';
+  } catch (error) {
+    console.error('GPT 요청 실패:', error);
+    figma.notify('GPT 요청 처리 중 오류가 발생했습니다.');
+    return null;
   }
-
-  const data = await response.json();
-  const gptResponse = data.choices?.[0]?.message?.content || 'No response received';
-
-  return gptResponse;
 }
