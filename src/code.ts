@@ -44,6 +44,7 @@ async function loadUIState() {
 async function checkStoredToken() {
   const storedToken = await figma.clientStorage.getAsync('openAIToken');
   console.log('Stored token:', storedToken);
+  console.log('Stored Token:', openAITokenObj.token);
 }
 checkStoredToken();
 
@@ -108,12 +109,20 @@ figma.ui.onmessage = async (msg) => {
   function createPrompt(question: string, component: string) {
     return `
       "${question}"에 적합한 문구를 만들어주세요.
-      컴포넌트는 ${component}입니다.
+      컴포넌트는 ${component} 입니다.
       응답 형식:
       {
         "title": "제목",
         "description": "설명",
-        "ok": "확인 버튼 텍스트"${component === 'Modal / Confirm' ? ',\n        "cancel": "취소 버튼 텍스트"' : ''}
+        "ok": "확인 버튼 텍스트"${component === 'Modal / Confirm' ? ',\n        "cancel": "취소 버튼 텍스트"' : ''},
+        "reference": {
+          "personalizedCommunication": "사용자의 학습 기록과 선호도를 반영하여 맞춤형 메시지를 제공, 사용자 개개인의 관심사에 직접 연결되는 상호작용을 제공합니다. 예: '지금까지의 Python 학습을 바탕으로 새로운 데이터 과학 코스를 추천합니다!'",
+          "enhancedInteraction": "설문조사, 퀴즈, 강의 피드백 등을 통해 사용자의 적극적인 참여를 유도하며, 플랫폼 경험을 보다 동적으로 만듭니다. 예: '이 강의에 대해 어떻게 생각하시나요? 별점을 주시고, 짧은 리뷰를 남겨주세요!'",
+          "emotionalConnection": "사용자의 성취를 축하하고 학습 과정 중 발생할 수 있는 어려움에 대해 공감을 표현하는 메시지로 사용자와 감성적으로 연결됩니다. 예: '이번 달의 학습 목표를 달성하셨군요! 자신에게 작은 선물을 주세요. 여러분의 노력을 응원합니다!'",
+          "clearInformation": "정보의 가독성과 접근성을 높여 모든 사용자가 쉽게 이해하고 사용할 수 있도록 최적화합니다. 특히 시각적 장애가 있는 사용자를 위한 접근성을 강화합니다. 예: '쿠폰 적용하기 버튼: 할인을 받으려면 이 버튼을 클릭하세요. 추가 정보를 원하면 정보 아이콘을 클릭해 주세요.'",
+          "diversityAndInclusion": "다양한 언어와 문화적 배경을 고려하여 광범위한 사용자에게 서비스를 제공합니다. 이를 통해 전 세계 어디에서나 인프런을 사용할 수 있습니다. 예: '이 강의는 다양한 언어로 제공됩니다. 언어 설정을 변경하시려면 여기를 클릭하세요.'",
+          "directiveLanguage": "사용자가 필요한 조치를 명확하게 이해하고 수행할 수 있도록 직접적인 지시를 계속 제공합니다. 예: '결제하기', '수강바구니에 추가하기'"
+        }
       }
     `;
   }
@@ -195,3 +204,23 @@ async function fetchChatGPTResponse(prompt: string, token: string) {
     return null;
   }
 }
+
+// document.addEventListener('DOMContentLoaded', () => {
+//     const tokenInput = document.getElementById('tokenInput') as HTMLInputElement | null;
+//     const saveToken = document.getElementById('saveToken') as HTMLButtonElement | null;
+
+//     if (tokenInput && saveToken) {
+//         saveToken.addEventListener('click', () => {
+//             const token = tokenInput.value.trim();
+//             if (token) {
+//                 openAITokenObj.token = token; // 토큰 저장
+//                 console.log('Saved Token:', openAITokenObj.token); // 디버깅용 로그
+//                 figma.notify('토큰이 저장되었습니다.');
+//             } else {
+//                 figma.notify('토큰을 입력하세요.');
+//             }
+//         });
+//     } else {
+//         console.error('토큰 입력 필드 또는 저장 버튼을 찾을 수 없습니다.');
+//     }
+// });

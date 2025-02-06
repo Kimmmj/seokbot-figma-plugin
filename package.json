@@ -47,7 +47,7 @@
     }
   },
   "dependencies": {
-    // "airtable": "^0.12.2",
+    
     "express": "^4.21.0",
     "openai": "^4.63.0"
   },
