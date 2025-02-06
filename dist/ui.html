@@ -248,10 +248,20 @@
 
         // 질문 전송
         document.getElementById('submitButton').onclick = () => {
-            const question = document.getElementById('questionInput').value;
+            // 선택된 컴포넌트 값 가져오기
             const selectedComponent = document.getElementById('componentSelect').value;
+            
+            // 질문 입력 값 가져오기
+            const question = document.getElementById('questionInput').value;
 
-            parent.postMessage({ pluginMessage: { type: 'submit-question', question, component: selectedComponent } }, '*');
+            // TypeScript로 메시지 전송
+            parent.postMessage({ 
+                pluginMessage: { 
+                    type: 'submit-question', 
+                    question,  // 질문 전달
+                    component: selectedComponent  // 선택된 컴포넌트 값 전달
+                } 
+            }, '*');
         };
 
         // 질문 전송 버튼 활성화 상태 검사
