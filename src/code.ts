@@ -53,6 +53,8 @@ let currentToken: string = ''; // 현재 토큰 값을 저장하는 변수
 let editStartToken: string = ''; // 수정 시작 시의 값을 저장하는 변수
 
 figma.ui.onmessage = async (msg) => {
+  console.log('받은 메시지:', msg); // 메시지 수신 확인
+
   const { type, token } = msg;
 
   if (type === 'start-edit') {
@@ -74,6 +76,102 @@ figma.ui.onmessage = async (msg) => {
         type: 'token-saved',
         success: false,
         error: (error as Error).message, // 명시적으로 Error로 타입 캐스팅
+      });
+    }
+  }
+
+  if (msg.type === 'submit-question') {
+    try {
+      // 저장된 토큰 가져오기
+      const token = await figma.clientStorage.getAsync('openAIToken');
+      console.log('저장된 토큰 확인:', token ? '토큰 있음' : '토큰 없음');
+      
+      if (!token) {
+        console.log('토큰이 없어서 에러 메시지 전송');
+        figma.ui.postMessage({ 
+          type: 'error', 
+          message: '유효한 OpenAI API 토큰이 필요합니다.' 
+        });
+        return;
+      }
+
+      const systemPrompt = `다음 형식에 맞춰서 JSON 형태로 응답해주세요:
+      {
+          "title": "제목",
+          "description": "설명",
+          "ok": "확인 버튼 텍스트"
+          ${msg.component === 'Modal / Confirm' ? ',\n          "cancel": "취소 버튼 텍스트"' : ''}
+      }`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: msg.question }
+          ]
+        })
+      });
+
+      console.log('API 응답 상태:', response.status, response.statusText);
+
+      if (!response.ok) {
+        throw new Error('API 응답 오류: ' + response.statusText);
+      }
+
+      const data = await response.json();
+      console.log('API 응답 데이터:', data);
+
+      if (data.choices && data.choices.length > 0 && data.choices[0].message) {
+        // JSON 문자열을 파싱하여 객체로 변환
+        const content = JSON.parse(data.choices[0].message.content);
+        
+        // 선택된 프레임의 텍스트 레이어 업데이트
+        const selection = figma.currentPage.selection;
+        if (selection.length > 0 && selection[0].type === 'FRAME') {
+          const frame = selection[0];
+          const textLayers = frame.findAll(node => node.type === 'TEXT');
+          
+          for (const layer of textLayers) {
+            if (layer.type === 'TEXT') {
+              const layerName = layer.name.toLowerCase();
+              await figma.loadFontAsync(layer.fontName as FontName);
+              
+              if (layerName.includes('title')) {
+                layer.characters = content.title;
+              } else if (layerName.includes('description')) {
+                layer.characters = content.description;
+              } else if (layerName.includes('ok')) {
+                layer.characters = content.ok;
+              } else if (layerName.includes('cancel') && content.cancel) {
+                layer.characters = content.cancel;
+              }
+            }
+          }
+        }
+
+        figma.ui.postMessage({ 
+          type: 'answer', 
+          message: content  // 파싱된 JSON 객체 전달
+        });
+      } else {
+        throw new Error('API 응답 형식이 올바르지 않습니다.');
+      }
+
+    } catch (error: unknown) {
+      console.error('질문 처리 중 상세 오류:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : '알 수 없는 오류';
+        
+      figma.ui.postMessage({ 
+        type: 'error', 
+        message: '오류가 발생했습니다: ' + errorMessage
       });
     }
   }
@@ -108,7 +206,8 @@ figma.ui.onmessage = async (msg) => {
   // GPT 요청 생성 함수
   function createPrompt(question: string, component: string) {
     return `
-      "${question}"에 적합한 문구를 만들어주세요.
+      reference를 참조해서
+      "${question}"에 적합한 문구를 응답형식에 맞게 만들어주세요.
       컴포넌트는 ${component} 입니다.
       응답 형식:
       {
@@ -204,23 +303,3 @@ async function fetchChatGPTResponse(prompt: string, token: string) {
     return null;
   }
 }
-
-// document.addEventListener('DOMContentLoaded', () => {
-//     const tokenInput = document.getElementById('tokenInput') as HTMLInputElement | null;
-//     const saveToken = document.getElementById('saveToken') as HTMLButtonElement | null;
-
-//     if (tokenInput && saveToken) {
-//         saveToken.addEventListener('click', () => {
-//             const token = tokenInput.value.trim();
-//             if (token) {
-//                 openAITokenObj.token = token; // 토큰 저장
-//                 console.log('Saved Token:', openAITokenObj.token); // 디버깅용 로그
-//                 figma.notify('토큰이 저장되었습니다.');
-//             } else {
-//                 figma.notify('토큰을 입력하세요.');
-//             }
-//         });
-//     } else {
-//         console.error('토큰 입력 필드 또는 저장 버튼을 찾을 수 없습니다.');
-//     }
-// });
