@@ -12,7 +12,7 @@
     "figjam"
   ],
   "networkAccess": {
-    "allowedDomains": "http://api.openai.com",
+    "allowedDomains": ["http://api.openai.com"],
     "reasoning": "This application needs to interact with a custom GPT model hosted at a specific external domain in order to generate responses based on user inputs. Network access is required to ensure proper functionality and communication with the hosted AI service.",
     "devAllowedDomains": ["http://localhost:3000"]
   }
