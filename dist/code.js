@@ -1,16 +1,4 @@
 "use strict";
-// 이 함수는 더 이상 필요하지 않으므로 제거합니다.
-// function 필요한것만(arr: Array<any>) {
-//   return arr.map(item => {
-//     const [cancel, ok] = item.fields.Button ? item.fields.Button?.split(' / ') : ['', '']
-//     return ({
-//     title: item.fields.Title,
-//     desc: item.fields.Description,
-//     button: { cancel, ok },
-//     comp: item.fields.Component,
-//   })
-// })
-// }
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -20,19 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-// 이 함수는 더 이상 필요하지 않으므로 제거합니다.
-// async function fetchAirtableData() {
-//   const response = await fetch(`https://api.airtable.com/v0/appIweCwukWXWM1no/tblGPBQZDdHxGua7f?view=viwHHNlyRPe2n7Q85`, {
-//     method: 'get',
-//     headers: {
-//       'Content-Type': 'application/json',
-//       Authorization: `Bearer patCoq2MEGY3wp0tZ.c92d3bcf58b7fa86de905831b0e67db37805b83bd74f14d64c6863955b7e604c`
-//     }
-//   });
-//   const data = await response.json();
-// ;
-//   return data.records.length > 0 ? 필요한것만(data.records) : 'No data found';
-// }
 const INPUT_COMPONENTS = [
     'Modal / Confirm',
     'Modal / Alert'
@@ -196,15 +171,8 @@ figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
         const question = msg.question;
         const selectedComponent = msg.component;
         if (!openAITokenObj.token) {
-            figma.notify('유효한 OpenAI API 토큰이 필요합니다.');
             return;
         }
-        // Airtable 데이터 관련 코드 제거
-        // const airtableAnswer = await fetchAirtableData();
-        // if (!airtableAnswer) {
-        //   figma.notify('Airtable 데이터가 없습니다.');
-        //   return;
-        // }
         // GPT 요청 생성 (별도 함수로 분리)
         const prompt = createPrompt(question, selectedComponent); // airtableAnswer 파라미터 제거
         const gptResponse = yield fetchChatGPTResponse(prompt, openAITokenObj.token);
