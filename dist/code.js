@@ -125,29 +125,52 @@ figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
             if (data.choices && data.choices.length > 0 && data.choices[0].message) {
                 // JSON 문자열을 파싱하여 객체로 변환
                 const content = JSON.parse(data.choices[0].message.content);
+                console.log('파싱된 GPT 응답:', content);
                 // 선택된 프레임의 텍스트 레이어 업데이트
                 const selection = figma.currentPage.selection;
-                if (selection.length > 0 && selection[0].type === 'FRAME') {
-                    const frame = selection[0];
-                    const textLayers = frame.findAll(node => node.type === 'TEXT');
-                    for (const layer of textLayers) {
-                        if (layer.type === 'TEXT') {
-                            const layerName = layer.name.toLowerCase();
-                            yield figma.loadFontAsync(layer.fontName);
-                            if (layerName.includes('title')) {
-                                layer.characters = content.title;
-                            }
-                            else if (layerName.includes('description')) {
-                                layer.characters = content.description;
-                            }
-                            else if (layerName.includes('ok')) {
-                                layer.characters = content.ok;
-                            }
-                            else if (layerName.includes('cancel') && content.cancel) {
-                                layer.characters = content.cancel;
+                console.log('선택된 요소:', selection);
+                if (selection.length > 0) {
+                    const node = selection[0];
+                    console.log('선택된 노드 타입:', node.type);
+                    // FRAME 또는 INSTANCE 타입 모두 처리
+                    if (node.type === 'FRAME' || node.type === 'INSTANCE') {
+                        const textLayers = node.findAll(node => node.type === 'TEXT');
+                        console.log('찾은 텍스트 레이어들:', textLayers.map(layer => layer.name));
+                        for (const layer of textLayers) {
+                            if (layer.type === 'TEXT') {
+                                const layerName = layer.name.toLowerCase();
+                                console.log('처리 중인 레이어:', layerName);
+                                try {
+                                    yield figma.loadFontAsync(layer.fontName);
+                                    if (layerName.includes('title')) {
+                                        layer.characters = content.title;
+                                        console.log('제목 업데이트:', content.title);
+                                    }
+                                    else if (layerName.includes('description')) {
+                                        layer.characters = content.description;
+                                        console.log('설명 업데이트:', content.description);
+                                    }
+                                    else if (layerName.includes('ok')) {
+                                        layer.characters = content.ok;
+                                        console.log('확인 버튼 업데이트:', content.ok);
+                                    }
+                                    else if (layerName.includes('cancel') && content.cancel) {
+                                        layer.characters = content.cancel;
+                                        console.log('취소 버튼 업데이트:', content.cancel);
+                                    }
+                                }
+                                catch (err) {
+                                    console.error('텍스트 레이어 업데이트 중 오류:', err);
+                                }
                             }
                         }
                     }
+                    else {
+                        console.log('선택된 요소가 프레임이나 인스턴스가 아닙니다.');
+                    }
+                }
+                else {
+                    console.log('선택된 요소가 없습니다.');
                 }
                 figma.ui.postMessage({
                     type: 'answer',
