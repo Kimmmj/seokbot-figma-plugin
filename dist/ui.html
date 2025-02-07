@@ -29,18 +29,23 @@
 
       .save-button:disabled,
       .send-button:disabled {
+        opacity: 0.4;
         color: gray; /* 텍스트 색상 변경 */
         background-color: lightgray; /* 배경색 변경 */
         border: 1px solid darkgray; /* 테두리 색상 변경 */
         cursor: not-allowed; /* 커서 변경 */
       }
 
+      .send-button:not(:disabled):hover {
+        background-color: black; /* 원하는 hover 배경색으로 변경 */
+      }
+
       .edit-button:hover {
         background-color: black; /* 원하는 hover 배경색으로 변경 */
       }
 
-      #questionInput {
-        height: 100px; /* 질문 입력 필드 높이 설정 */
+      #question {
+        min-height: 100px; /* 질문 입력 필드 높이 설정 */
         resize: none; /* 크기 조절 비활성화 */
         overflow: auto; /* 내용이 넘칠 경우 스크롤 가능 */
       }
@@ -76,8 +81,9 @@
     <button id="closeToken" class="hidden">닫기</button>
     <label for="questionInput" class="label">질문 입력</label>
     <textarea
-      id="questionInput"
-      placeholder="confirm 또는 alert 모달에 맞는 적절한 문구를 추천합니다."
+      id="question"
+      placeholder="어떤 상황에서 보여줄 메시지인지 설명해주세요.
+예) 회원가입 완료, 결제 실패, 로그아웃 확인 등"
     ></textarea>
 
     <!-- 드롭다운 추가 -->
@@ -291,7 +297,7 @@
           document.getElementById("componentSelect").value;
 
         // 질문 입력 값 가져오기
-        const question = document.getElementById("questionInput").value;
+        const question = document.getElementById("question").value;
 
         // TypeScript로 메시지 전송
         parent.postMessage(
@@ -309,7 +315,7 @@
       // 질문 전송 버튼 활성화 상태 검사
       function checkInputs() {
         const questionInputValue = document
-          .getElementById("questionInput")
+          .getElementById("question")
           .value.trim();
         const tokenValue = document.getElementById("tokenInput").value.trim(); // 토큰 입력 필드 값 가져오기
 
@@ -321,7 +327,7 @@
 
       // textarea에서 입력할 때마다 질문 전송 버튼 상태 검사
       document
-        .getElementById("questionInput")
+        .getElementById("question")
         .addEventListener("input", checkInputs);
       document
         .getElementById("tokenInput")
