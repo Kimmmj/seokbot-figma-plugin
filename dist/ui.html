@@ -66,20 +66,48 @@
         font-size: 14px; /* 폰트 크기 조절 */
         display: block; /* 라벨을 블록 요소로 설정하여 줄 바꿈 */
       }
+
+      .input-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .input-group input {
+        flex: 1;
+      }
+
+      .input-group button {
+        flex: none;
+        width: auto;
+      }
+
+      /* 질문 입력 label 위에 여백 추가 */
+      #questionInputLabel {
+        margin-top: 10px; /* 원하는 여백 크기로 설정 */
+      }
+
+      /* 질문하기 버튼 위에 여백 추가 */
+      #submitButton {
+        margin-top: 10px; /* 원하는 여백 크기로 설정 */
+      }
+
     </style>
   </head>
   <body>
     <label for="tokenInput" class="label">Open AI Token</label>
-    <input
-      id="tokenInput"
-      type="text"
-      placeholder="OpenAI API Token을 입력하세요"
-      disabled
-    />
-    <button id="editToken" class="edit-button">수정</button>
-    <button id="saveToken" class="save-button hidden" disabled>저장</button>
-    <button id="closeToken" class="hidden">닫기</button>
-    <label for="questionInput" class="label">질문 입력</label>
+    <div class="input-group">
+      <input
+        id="tokenInput"
+        type="text"
+        placeholder="API Token을 입력하세요"
+        disabled
+      />
+      <button id="editToken" class="edit-button">수정</button>
+      <button id="saveToken" class="save-button hidden" disabled>저장</button>
+      <button id="closeToken" class="hidden">닫기</button>
+    </div>
+    <label id="questionInputLabel" class="label">질문 입력</label>
     <textarea
       id="question"
       placeholder="어떤 상황에서 보여줄 메시지인지 설명해주세요.
@@ -120,7 +148,7 @@
           async function loadStoredToken() {
             try {
               // Figma 플러그인에 토큰 요청 메시지 전송
-              console.log("토큰 로딩 요청 전송");
+              // console.log("토큰 로딩 요청 전송");
               parent.postMessage({ pluginMessage: { type: "get-token" } }, "*");
             } catch (error) {
               console.error("토큰 로딩 중 오류 발생:", error);
@@ -129,12 +157,12 @@
 
           // TypeScript에서 온 메시지를 처리
           window.onmessage = async (event) => {
-            console.log("메시지 수신:", event.data.pluginMessage);
+            // console.log("메시지 수신:", event.data.pluginMessage);
             const message = event.data.pluginMessage;
 
             if (message && message.type === "load-token") {
               // 'token-data'에서 'load-token'으로 변경
-              console.log("토큰 데이터 수신:", message.token);
+              // console.log("토큰 데이터 수신:", message.token);
               const tokenInput = document.getElementById("tokenInput");
               const saveButton = document.getElementById("saveToken");
               const editButton = document.getElementById("editToken");
@@ -147,7 +175,7 @@
                 saveButton.classList.add("hidden");
                 editButton.classList.remove("hidden");
               } else {
-                console.log("수신된 토큰이 없습니다");
+                // console.log("수신된 토큰이 없습니다");
               }
             }
           };

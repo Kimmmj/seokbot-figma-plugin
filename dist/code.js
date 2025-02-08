@@ -25,8 +25,8 @@ function loadUIState() {
 function checkStoredToken() {
     return __awaiter(this, void 0, void 0, function* () {
         const storedToken = yield figma.clientStorage.getAsync('openAIToken');
-        console.log('Stored token:', storedToken);
-        console.log('Stored Token:', openAITokenObj.token);
+        // console.log('Stored token:', storedToken);
+        // console.log('Stored Token:', openAITokenObj.token);
     });
 }
 checkStoredToken();
@@ -34,7 +34,7 @@ checkStoredToken();
 let currentToken = ''; // 현재 토큰 값을 저장하는 변수
 let editStartToken = ''; // 수정 시작 시의 값을 저장하는 변수
 figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log('받은 메시지:', msg); // 메시지 수신 확인
+    // console.log('받은 메시지:', msg); // 메시지 수신 확인
     const { type, token } = msg;
     if (type === 'start-edit') {
         editStartToken = token; // 수정 시작 시 현재 값을 저장
@@ -61,9 +61,9 @@ figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             // 저장된 토큰 가져오기
             const token = yield figma.clientStorage.getAsync('openAIToken');
-            console.log('저장된 토큰 확인:', token ? '토큰 있음' : '토큰 없음');
+            // console.log('저장된 토큰 확인:', token ? '토큰 있음' : '토큰 없음');
             if (!token) {
-                console.log('토큰이 없어서 에러 메시지 전송');
+                // console.log('토큰이 없어서 에러 메시지 전송');
                 figma.ui.postMessage({
                     type: 'error',
                     message: '유효한 OpenAI API 토큰이 필요합니다.'
@@ -91,47 +91,47 @@ figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
                     ]
                 })
             });
-            console.log('API 응답 상태:', response.status, response.statusText);
+            // console.log('API 응답 상태:', response.status, response.statusText);
             if (!response.ok) {
                 throw new Error('API 응답 오류: ' + response.statusText);
             }
             const data = yield response.json();
-            console.log('API 응답 데이터:', data);
+            // console.log('API 응답 데이터:', data);
             if (data.choices && data.choices.length > 0 && data.choices[0].message) {
                 // JSON 문자열을 파싱하여 객체로 변환
                 const content = JSON.parse(data.choices[0].message.content);
-                console.log('파싱된 GPT 응답:', content);
+                // console.log('파싱된 GPT 응답:', content);
                 // 선택된 프레임의 텍스트 레이어 업데이트
                 const selection = figma.currentPage.selection;
-                console.log('선택된 요소:', selection);
+                // console.log('선택된 요소:', selection);
                 if (selection.length > 0) {
                     const node = selection[0];
-                    console.log('선택된 노드 타입:', node.type);
+                    // console.log('선택된 노드 타입:', node.type);
                     // FRAME 또는 INSTANCE 타입 모두 처리
                     if (node.type === 'FRAME' || node.type === 'INSTANCE') {
                         const textLayers = node.findAll(node => node.type === 'TEXT');
-                        console.log('찾은 텍스트 레이어들:', textLayers.map(layer => layer.name));
+                        // console.log('찾은 텍스트 레이어들:', textLayers.map(layer => layer.name));
                         for (const layer of textLayers) {
                             if (layer.type === 'TEXT') {
                                 const layerName = layer.name.toLowerCase();
-                                console.log('처리 중인 레이어:', layerName);
+                                // console.log('처리 중인 레이어:', layerName);
                                 try {
                                     yield figma.loadFontAsync(layer.fontName);
                                     if (layerName.includes('title')) {
                                         layer.characters = content.title;
-                                        console.log('제목 업데이트:', content.title);
+                                        // console.log('제목 업데이트:', content.title);
                                     }
                                     else if (layerName.includes('description')) {
                                         layer.characters = content.description;
-                                        console.log('설명 업데이트:', content.description);
+                                        // console.log('설명 업데이트:', content.description);
                                     }
                                     else if (layerName.includes('ok')) {
                                         layer.characters = content.ok;
-                                        console.log('확인 버튼 업데이트:', content.ok);
+                                        // console.log('확인 버튼 업데이트:', content.ok);
                                     }
                                     else if (layerName.includes('cancel') && content.cancel) {
                                         layer.characters = content.cancel;
-                                        console.log('취소 버튼 업데이트:', content.cancel);
+                                        // console.log('취소 버튼 업데이트:', content.cancel);
                                     }
                                 }
                                 catch (err) {
@@ -141,11 +141,11 @@ figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
                         }
                     }
                     else {
-                        console.log('선택된 요소가 프레임이나 인스턴스가 아닙니다.');
+                        // console.log('선택된 요소가 프레임이나 인스턴스가 아닙니다.');
                     }
                 }
                 else {
-                    console.log('선택된 요소가 없습니다.');
+                    // console.log('선택된 요소가 없습니다.');
                 }
                 figma.ui.postMessage({
                     type: 'answer',
@@ -230,7 +230,7 @@ figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 // Figma 플러그인의 UI를 보여줍니다.
-figma.showUI(__html__, { width: 300, height: 600 });
+figma.showUI(__html__, { width: 370, height: 400 });
 // 플러그인 시작 시 저장된 토큰 불러오기
 loadUIState(); // UI 초기화 실행
 // 특정 프레임 안의 텍스트 레이어에 텍스트를 설정하는 함수
